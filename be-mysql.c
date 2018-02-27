@@ -27,13 +27,14 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
+#define BE_MYSQL
 #ifdef BE_MYSQL
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <mosquitto.h>
+#include <unistd.h>
 #include "be-mysql.h"
 #include "log.h"
 #include "hash.h"
@@ -135,13 +136,14 @@ void *be_mysql_init()
 		reconnect = true;
 		mysql_options(conf->mysql, MYSQL_OPT_RECONNECT, &reconnect);
 	}
-	if (!mysql_real_connect(conf->mysql, host, user, pass, dbname, port, NULL, 0)) {
+	while (!mysql_real_connect(conf->mysql, host, user, pass, dbname, port, NULL, 0)) {
 		_log(LOG_NOTICE, "%s", mysql_error(conf->mysql));
 		if (!conf->auto_connect && !reconnect) {
 			free(conf);
 			mysql_close(conf->mysql);
 			return (NULL);
 		}
+		usleep(5000);
 	}
 	return ((void *)conf);
 }
